@@ -1,0 +1,17 @@
+{
+  "name": "minimax-usage",
+  "version": "1.0.0",
+  "description": "MiniMax (MiniMax) Token Plan usage monitor for pi coding agent. Shows 5h and weekly Coding Plan quota in the footer.",
+  "keywords": [
+    "pi-package"
+  ],
+  "pi": {
+    "extensions": [
+      "./index.ts"
+    ]
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-ai": "*",
+    "@earendil-works/pi-tui": "*"
+  }
+}

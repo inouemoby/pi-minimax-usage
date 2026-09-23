@@ -251,6 +251,7 @@ export default function (pi: ExtensionAPI) {
   const keys = getApiKeys();
   let usageByRegion: Record<"intl" | "cn", UsageData | null> = { intl: null, cn: null };
   let footerOn = false;
+  let footerGeneration = 0;
   let _tui: any = null;
   let thinkingLevel = "off";
 
@@ -267,7 +268,13 @@ export default function (pi: ExtensionAPI) {
   function isMiniMax(ctx: any): boolean {
     return ctx?.model?.provider === "minimax" || ctx?.model?.provider === "minimax-cn";
   }
-  function trigger() { if (_tui) setTimeout(() => _tui.requestRender?.(), 0); }
+  function requestRenderSafe(tui: any): void {
+    try { tui?.requestRender?.(); } catch { /* footer may already be disposed */ }
+  }
+
+  function trigger() {
+    setTimeout(() => requestRenderSafe(_tui), 0);
+  }
 
   async function refresh(ctx: any) {
     const region = pickRegion(ctx);
@@ -280,9 +287,9 @@ export default function (pi: ExtensionAPI) {
     }
   }
 
-  function toggleFooter(ctx: any) {
+  function toggleFooter(ctx: any, force = false) {
     if (isMiniMax(ctx)) {
-      if (!footerOn) {
+      if (!footerOn || force) {
         ctx.ui.setFooter(buildFooter(ctx));
         footerOn = true;
       }
@@ -294,11 +301,20 @@ export default function (pi: ExtensionAPI) {
   }
 
   function buildFooter(ctx: any) {
+    const generation = ++footerGeneration;
     return (tui: any, theme: any, fd: any) => {
       _tui = tui;
-      const unsub = fd.onBranchChange(() => tui.requestRender());
+      const unsub = fd.onBranchChange(() => {
+        if (generation === footerGeneration) requestRenderSafe(tui);
+      });
       return {
-        dispose: () => { unsub(); _tui = null; },
+        dispose: () => {
+          try { unsub(); } catch { /* already disposed */ }
+          if (generation === footerGeneration) {
+            _tui = null;
+            footerOn = false;
+          }
+        },
         invalidate() {},
         render(width: number): string[] {
           const sm = ctx.sessionManager;
@@ -382,11 +398,11 @@ export default function (pi: ExtensionAPI) {
   // ── Events ─────────────────────────────────────────────────
   pi.on("session_start", async (_e, ctx) => {
     thinkingLevel = pi.getThinkingLevel?.() || "off";
-    toggleFooter(ctx);
+    toggleFooter(ctx, true);
     if (isMiniMax(ctx)) refresh(ctx);
   });
   pi.on("model_select", async (_e, ctx) => {
-    toggleFooter(ctx);
+    toggleFooter(ctx, true);
     if (isMiniMax(ctx)) refresh(ctx);
   });
   pi.on("thinking_level_select", async (event: any) => {

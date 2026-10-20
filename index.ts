@@ -1,7 +1,6 @@
 import type { AssistantMessage } from "@earendil-works/pi-ai";
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { truncateToWidth, visibleWidth } from "@earendil-works/pi-tui";
-import { Type } from "typebox";
 import { homedir } from "os";
 import { join } from "path";
 import { readFileSync } from "fs";
@@ -435,50 +434,6 @@ export default function (pi: ExtensionAPI) {
         ctx.ui.notify(lines.join("\n"), d.ok ? "info" : "warning");
       } catch (err: any) {
         ctx.ui.notify(`MiniMax: ${err.message}`, "error");
-      }
-    },
-  });
-
-  // ── minimax_usage tool ──────────────────────────────────
-  pi.registerTool({
-    name: "minimax_usage",
-    label: "MiniMax Usage",
-    description: "Check MiniMax (MiniMax-M2.7 / MiniMax-M3) Token Plan quota: 5h rolling window and weekly Coding Plan remaining.",
-    promptSnippet: "Check MiniMax Token Plan remaining quota",
-    promptGuidelines: [
-      "Use minimax_usage to check MiniMax Coding Plan quota before expensive operations.",
-      "Use minimax_usage when the user asks about MiniMax usage, limits, or remaining credits.",
-      "Proactively call minimax_usage at the start of a task to ensure sufficient quota.",
-    ],
-    parameters: Type.Object({}),
-    async execute(_id: any, _p: any, _s: any, _up: any, ctx: any) {
-      const region = pickRegion(ctx) ?? (keys.cn ? "cn" : "intl");
-      try {
-        const d = await getUsage(region);
-        const out = {
-          region: region === "cn" ? "minimax-cn" : "minimax",
-          ok: d.ok,
-          message: d.message,
-          session5h: d.session
-            ? {
-                total: d.session.total,
-                used: d.session.used,
-                remaining: d.session.remain,
-                resetAt: d.session.resetMs ? new Date(d.session.resetMs).toISOString() : null,
-              }
-            : null,
-          weekly: d.weekly
-            ? {
-                total: d.weekly.total,
-                used: d.weekly.used,
-                remaining: d.weekly.remain,
-                resetAt: d.weekly.resetMs ? new Date(d.weekly.resetMs).toISOString() : null,
-              }
-            : null,
-        };
-        return { content: [{ type: "text", text: JSON.stringify(out, null, 2) }], details: out };
-      } catch (err: any) {
-        return { content: [{ type: "text", text: `Error: ${err.message}` }], isError: true };
       }
     },
   });

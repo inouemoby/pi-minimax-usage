@@ -2,12 +2,11 @@
 
 MiniMax Token Plan (Coding Plan) quota monitor extension for [pi coding agent](https://github.com/earendil-works/pi-mono).
 
-Displays MiniMax's 5-hour rolling window and weekly quota in pi's footer in real time. Also provides a `/minimax` command and `minimax_usage` tool for quota checks.
+Displays MiniMax's 5-hour rolling window and weekly quota in pi's footer in real time. Also provides a `/minimax` command for quota checks.
 
 ## Features
 
 - **`/minimax` command**: Detailed quota view (5h / weekly / reset times)
-- **`minimax_usage` tool**: Proactively check remaining Coding Plan quota before expensive operations
 - **Auto-region**: Picks the right host automatically — `minimax` provider uses `api.minimax.io`, `minimax-cn` uses `api.minimaxi.com`
 - **No login needed**: Reads the API key from `auth.json` automatically
 - **Graceful empty state**: Shows "no active token plan subscription" instead of erroring when the account has no Coding Plan
@@ -65,25 +64,6 @@ When using a MiniMax-backed model, the footer shows:
 - `5h:N% XhYm` — 5-hour rolling window. `!` above 70% used, `!!` above 90% used. Time until reset follows.
 - `wk:N% XdYh` — weekly Coding Plan quota with the same pacing flags.
 - Provider label `(MiniMax)` for international, `(MiniMax CN)` for China region.
-
-## Tool: minimax_usage
-
-The extension also registers a `minimax_usage` tool that the AI can call:
-
-```
-Check MiniMax Token Plan remaining quota
-```
-
-Returns structured JSON:
-
-```json
-{
-  "region": "minimax-cn",
-  "ok": true,
-  "session5h": { "total": 5000, "used": 1200, "remaining": 3800, "resetAt": "2026-07-23T..." },
-  "weekly": { "total": 40000, "used": 4200, "remaining": 35800, "resetAt": "2026-07-29T..." }
-}
-```
 
 ## How It Works
 

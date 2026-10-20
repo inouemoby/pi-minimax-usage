@@ -11,6 +11,8 @@ import { readFileSync } from "fs";
 const URL_INTL = "https://api.minimax.io/v1/api/openplatform/coding_plan/remains";
 const URL_CN = "https://api.minimaxi.com/v1/api/openplatform/coding_plan/remains";
 const CACHE_MS = 60_000;
+const FIVE_HOUR_MS = 5 * 60 * 60 * 1000;
+const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 
 // API status codes returned in `base_resp.status_code` (well-known subset).
 const STATUS_OK = 0;
@@ -210,10 +212,14 @@ function formatRemainTime(ms: number | null): string {
   return rh === 0 ? `${d}d` : `${d}d${rh}h`;
 }
 
-function severity(p: number, ok: boolean): number {
-  if (!ok) return 2;
-  if (p >= 90) return 2;
-  if (p >= 70) return 1;
+/** Returns severity level: 0=normal, 1=above expected pace, 2=above 1.5x expected pace */
+function usageSeverity(pct: number, windowMs: number, resetMs: number | null): number {
+  if (!resetMs || resetMs <= 0) return 0;
+  const remainingMs = resetMs - Date.now();
+  const elapsedMs = Math.max(0, windowMs - remainingMs);
+  const expectedPct = (elapsedMs / windowMs) * 100;
+  if (pct > expectedPct * 1.5) return 2;
+  if (pct > expectedPct) return 1;
   return 0;
 }
 
@@ -221,13 +227,13 @@ function formatReset(usage: UsageData): string {
   const parts: string[] = [];
   if (usage.session) {
     const p = usage.session.total > 0 ? (usage.session.used / usage.session.total) * 100 : 0;
-    const s = severity(p, true);
+    const s = usageSeverity(p, FIVE_HOUR_MS, usage.session.resetMs);
     const flag = s === 2 ? "!!" : s === 1 ? "!" : "";
     parts.push(`${flag}5h:${Math.round(p)}% ${formatRemainTime(usage.session.resetMs)}`);
   }
   if (usage.weekly) {
     const p = usage.weekly.total > 0 ? (usage.weekly.used / usage.weekly.total) * 100 : 0;
-    const s = severity(p, true);
+    const s = usageSeverity(p, WEEK_MS, usage.weekly.resetMs);
     const flag = s === 2 ? "!!" : s === 1 ? "!" : "";
     parts.push(`${flag}wk:${Math.round(p)}% ${formatRemainTime(usage.weekly.resetMs)}`);
   }

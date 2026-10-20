@@ -61,7 +61,7 @@ When using a MiniMax-backed model, the footer shows:
 ↑3.2k ↓1.1k 12.5%/1M (auto) 5h:6% 4h28m wk:1% 6d12h    (MiniMax CN) MiniMax-M3 • max
 ```
 
-- `5h:N% XhYm` — 5-hour rolling window. `!` above 70% used, `!!` above 90% used. Time until reset follows.
+- `5h:N% XhYm` — 5-hour rolling window. `!` above expected pace, `!!` exceeds 1.5× expected pace. Time until reset follows.
 - `wk:N% XdYh` — weekly Coding Plan quota with the same pacing flags.
 - Provider label `(MiniMax)` for international, `(MiniMax CN)` for China region.
 
